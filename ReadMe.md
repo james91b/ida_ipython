@@ -16,8 +16,7 @@ You can also use the QT console to graph things. This is an example creating a b
 
 Another useful case is using IPython notebooks.
 
-[Function Entropy](http://nbviewer.ipython.org/github/james91b/ida_ipython/blob/master/notebook/examples/Function%20Entropy.ipynb) 
-Here is an example where we compute the entropy (using scipy stats module) of each function in notepad.exe and graph the result.
+- [Function Entropy](http://nbviewer.ipython.org/github/james91b/ida_ipython/blob/master/notebook/examples/Function%20Entropy.ipynb) - Here is an example where we compute the entropy (using scipy stats module) of each function in notepad.exe and graph the result.
 
 More examples..soon...
 
