@@ -16,9 +16,10 @@ You can also use the QT console to graph things. This is an example creating a b
 
 Another useful case is using IPython notebooks.
 
-Here we compute the entropy of each function in notepad.exe (using scipy stats module) and graph the result.
+[Function Entropy](http://nbviewer.ipython.org/github/james91b/ida_ipython/blob/master/notebook/examples/Function%20Entropy.ipynb) 
+Here is an example where we compute the entropy (using scipy stats module) of each function in notepad.exe and graph the result.
 
-More examples..coming soon...
+More examples..soon...
 
 #How the plugin works
 IDA is predominantly single threaded application, so we cannot safely run the kernel in a separate thread. So instead of using another thread a hook is created on the QT process events function and the "do_one_iteration" method of the ipython kernel is executed each frame.
