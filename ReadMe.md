@@ -29,7 +29,7 @@ I suggest using the Anaconda distribution of Python as it comes with all the req
 This plugin should work on all 6.X x86 QT versions of IDA.
 
 ##Basic Installation and QTConsole
-1. Download and extract the release
+1. Download and extract the [release](https://github.com/james91b/ida_ipython/releases/tag/0.1)
 2. Copy files from `python` and `plugins` directories into your IDA directory.
 3. Launch IDA.
 4. Start an IPython qtconsole with the kernel instance (outputted in the IDA console) e.g `ipython qtconsole --existing kernel-4264.json`
