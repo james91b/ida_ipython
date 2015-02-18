@@ -33,7 +33,7 @@ This plugin should work on all 6.X x86 QT versions of IDA.
 1. Download and extract the [release](https://github.com/james91b/ida_ipython/releases/tag/0.1)
 2. Copy files from `python` and `plugins` directories into your IDA directory.
 3. Launch IDA.
-4. Start an IPython qtconsole with the kernel instance (outputted in the IDA console) e.g `ipython qtconsole --existing kernel-4264.json`
+4. At the command line (Windows), start an IPython qtconsole with the kernel instance (outputted in the IDA console) e.g `ipython qtconsole --existing kernel-4264.json`
 
 ##Using the Notebook
 1. Copy `idc` directory to your IDA directory. (the nothing.idc scipt is used to pass command line parameters to the plugin)
