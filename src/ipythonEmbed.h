@@ -31,5 +31,6 @@ typedef enum IPYTHONEMBED_STATUS
 
 IPYTHONEMBED_STATUS ipython_embed_start(PyObject* cmdline);
 void ipython_embed_term();
+void ipython_start_qtconsole();
 
 #endif //IPYTHONEMBED_H
