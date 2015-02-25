@@ -1,4 +1,5 @@
 try:
+    import os
     import sys
     import platform
     import subprocess
@@ -69,10 +70,23 @@ try:
     def release_output_streams():
         sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__ =  sys.__stdout__, sys.__stderr__, sys.stdout, sys.stderr
 
+    def find_python_dir():
+        #We need to get the python directory like this, because
+        #sys.executable will return idaq.exe. This just goes two
+        #directories up from os.py location
+        return os.path.dirname(os.path.dirname(os.__file__))
+
     def start_qtconsole():
         try:
             if kernel_app:
-                cmd_line = ["ipython", "qtconsole", "--existing", kernel_app.connection_file, "--profile", kernel_app.profile]
+                python_directory = find_python_dir()
+                cmd_line = [
+                    "{}/pythonw".format(python_directory),
+                    "{}/Scripts/ipython-script.py".format(python_directory),
+                    "qtconsole",
+                    "--existing", kernel_app.connection_file,
+                    "--profile", kernel_app.profile
+                ]
                 subprocess.Popen(cmd_line,
                         stdin=None,
                         stdout=None,
