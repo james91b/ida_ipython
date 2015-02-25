@@ -78,20 +78,31 @@ try:
                         stdout=None,
                         stderr=None,
                         close_fds=True)
+            else:
+                print "Error: No kernel defined!"
         except Exception, e:
             traceback.print_exc()
 
     def start(argv=None):
         try:
             global kernel_app
-            capture_output_streams()
             if argv:
                 sys.argv = argv
+
+            capture_output_streams()
             kernel_app = embed_kernel(module=__main__, local_ns={})
-            return kernel_app.kernel.do_one_iteration
+
+            def kernel_iteration():
+                capture_output_streams()
+                kernel_app.kernel.do_one_iteration()
+                release_output_streams()
+
+            return kernel_iteration
         except Exception, e:
             traceback.print_exc()
             raise
+        finally:
+            release_output_streams()
 
 except Exception, e:
     traceback.print_exc()

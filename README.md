@@ -60,6 +60,14 @@ e.g.
 
 So far only tested with "Visual Studio 11" compiler.
 
+#Changelog
+0.2
+- Running the plugin from the plugins menu will now launch an IPython QTConsole
+- Only capture standard output and error when executing the kernel
+
+0.1
+- First release
+
 #To do/Future Ideas
 - More examples
 - Create a library for cell/line magic functions specific to IDA
