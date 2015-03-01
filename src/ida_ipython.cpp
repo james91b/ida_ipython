@@ -61,25 +61,29 @@ int idaapi init(void)
 
 void idaapi term(void)
 {
-    ipython_embed_term();
+  ipython_embed_term();
 }
 
+void idaapi run(int options)
+{
+  ipython_start_qtconsole();
+}
 //--------------------------------------------------------------------------
 //
 //      PLUGIN DESCRIPTION BLOCK
 //
 //--------------------------------------------------------------------------
-static char wanted_name[] = "IDA IPython Kernel";
+static char wanted_name[] = "IDA IPython QTConsole";
 static char comment[] = "Runs an IPython Kernel within IDA";
 static char help[] = "This plugin allows the user to run an IPython kernel within IDA\n";
 
 plugin_t PLUGIN =
 {
   IDP_INTERFACE_VERSION,
-  PLUGIN_FIX | PLUGIN_HIDE,           // plugin flags
+  PLUGIN_FIX,           // plugin flags
   init,                 // initialize
   term,                 // terminate. this pointer may be NULL.
-  NULL,                 // invoke plugin
+  run,                  // invoke plugin
   comment,              // long comment about the plugin
                         // it could appear in the status line
                         // or as a hint

@@ -1,6 +1,10 @@
 try:
+    import os
     import sys
     import platform
+    import subprocess
+    import idaapi
+    import traceback
 
     #This is a hack to get zmq to work with the Anaconda distribution and IDA.
     try:
@@ -12,7 +16,7 @@ try:
     from IPython.kernel.zmq.kernelapp import IPKernelApp
     from IPython.utils.frame import extract_module_locals
 
-    sys.__stdout__ = sys.__stderr__ =  sys.stdout
+    kernel_app = None
 
     def embed_kernel(module=None, local_ns=None, **kwargs):
         """Embed and start an IPython kernel in a given scope.
@@ -61,12 +65,59 @@ try:
         app.kernel.start()
         return app
 
+    def capture_output_streams():
+        sys.__stdout__, sys.__stderr__, sys.stdout, sys.stderr =  sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__
+
+    def release_output_streams():
+        sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__ =  sys.__stdout__, sys.__stderr__, sys.stdout, sys.stderr
+
+    def find_python_dir():
+        #We need to get the python directory like this, because
+        #sys.executable will return idaq.exe. This just goes two
+        #directories up from os.py location
+        return os.path.dirname(os.path.dirname(os.__file__))
+
+    def start_qtconsole():
+        try:
+            if kernel_app:
+                python_directory = find_python_dir()
+                cmd_line = [
+                    "{}/pythonw".format(python_directory),
+                    "{}/Scripts/ipython-script.py".format(python_directory),
+                    "qtconsole",
+                    "--existing", kernel_app.connection_file,
+                    "--profile", kernel_app.profile
+                ]
+                subprocess.Popen(cmd_line,
+                        stdin=None,
+                        stdout=None,
+                        stderr=None,
+                        close_fds=True)
+            else:
+                print "Error: No kernel defined!"
+        except Exception, e:
+            traceback.print_exc()
+
     def start(argv=None):
-        if argv:
-            sys.argv = argv
-        kapp = embed_kernel(module=__main__, local_ns={})
-        return kapp.kernel.do_one_iteration
+        try:
+            global kernel_app
+            if argv:
+                sys.argv = argv
+
+            capture_output_streams()
+            kernel_app = embed_kernel(module=__main__, local_ns={})
+
+            def kernel_iteration():
+                capture_output_streams()
+                kernel_app.kernel.do_one_iteration()
+                release_output_streams()
+
+            return kernel_iteration
+        except Exception, e:
+            traceback.print_exc()
+            raise
+        finally:
+            release_output_streams()
 
 except Exception, e:
-    import traceback
     traceback.print_exc()
