@@ -27,7 +27,7 @@ IDA is predominantly single threaded application, so we cannot safely run the ke
 #Installation
 I suggest using the [Anaconda](http://continuum.io/downloads) distribution of Python as it comes with all the required python libraries pre-built and installed. To get IDA to use Anaconda, simply set the PYTHONHOME enviroment variable. Alternatively you can install IPython and the dependencies separately.
 
-This plugin should work on all 6.X x86 QT versions of IDA.
+This plugin should work on all 6.X x86 QT versions of IDA on Windows.
 
 ##Basic Installation and QTConsole
 1. Download and extract the [release](https://github.com/james91b/ida_ipython/releases/tag/0.1)
