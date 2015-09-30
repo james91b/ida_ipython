@@ -1,4 +1,4 @@
-from IPython.kernel.ioloop import IOLoopKernelManager
+from jupyter_client.ioloop import IOLoopKernelManager
 import os
 import sys
 from subprocess import Popen, PIPE
@@ -6,7 +6,7 @@ from subprocess import Popen, PIPE
 from IPython.utils.encoding import getdefaultencoding
 from IPython.utils.py3compat import cast_bytes_py2
 
-IDA_EXE = r"C:\Program Files (x86)\IDA 6.4\idaq.exe"
+IDA_EXE = r"C:\Program Files (x86)\IDA 6.6\idaq.exe"
 
 def launch_ida_kernel(cmd, stdin=None, stdout=None, stderr=None,
                         independent=False,
@@ -74,9 +74,9 @@ def launch_ida_kernel(cmd, stdin=None, stdout=None, stderr=None,
         if cwd:
             cwd = cast_bytes_py2(cwd, sys.getfilesystemencoding() or 'ascii')
 
-        from IPython.kernel.zmq.parentpoller import ParentPollerWindows
+        from jupyter_client import win_interrupt
         # Create a Win32 event for interrupting the kernel.
-        interrupt_event = ParentPollerWindows.create_interrupt_event()
+        interrupt_event = win_interrupt.create_interrupt_event()
         # Store this in an environment variable for third party kernels, but at
         # present, our own kernel expects this as a command line argument.
         env["IPY_INTERRUPT_EVENT"] = str(interrupt_event)
