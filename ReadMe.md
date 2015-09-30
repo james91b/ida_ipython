@@ -1,3 +1,7 @@
+# What's New
+
+- 2015-09-30: Added support for Jupyter (replaces original support for IPython). 
+
 #What and Why?
 This is a plugin to embed an IPython kernel in IDA Pro. The Python ecosystem has amazing libraries (and communities) for scientific computing. IPython itself is great for exploratory data analysis. Using tools such as the IPython notebook make it easy to share code and explanations with rich media. IPython makes using IDAPython and interacting with IDA programmatically really fun and easy.
 
@@ -37,10 +41,10 @@ This plugin should work on all 6.X x86 QT versions of IDA on Windows.
 
 ##Using the Notebook
 1. Copy `idc` directory to your IDA directory. (the nothing.idc scipt is used to pass command line parameters to the plugin)
-2. Copy IPython profile `notebook\profile_ida` to `%HOME%\.ipython\profile_ida` (All the configuration is default except one line to set the kernel manager in `ipython_notebook_config.py`)
-3. Change the IDA_EXE variable to your idaq.exe location then copy `notebook\idakernelmanager.py` to somewhere accessible on your python path e.g `%PYTHONHOME%\Lib\site-packages`
-4. Run `ipython notebook --profile ida` at the command line
-5. Start a notebook and IDA should start
+3. Change the `IDA_EXE` variable to your `idaq.exe` location then copy `notebook\idakernelmanager.py` to somewhere accessible on your python path e.g `%PYTHONHOME%\Lib\site-packages`
+4. Copy `notebook\.jupyter-ida` to `%USERPROFILE%\.jupyter-ida`
+5. Run `set JUPYTER_CONFIG_DIR=%USERPROFILE%\.jupyter-ida && jupyter-notebook` at the command-line
+7. Start a notebook and IDA should start
 
 #How to Build
 1. Install cmake
