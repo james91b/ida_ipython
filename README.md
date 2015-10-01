@@ -1,6 +1,7 @@
 # What's New
 
 - 2015-09-30: Added support for Jupyter (replaces original support for IPython). 
+- 2015-10-01: Added support for ida64.
 
 #What and Why?
 This is a plugin to embed an IPython kernel in IDA Pro. The Python ecosystem has amazing libraries (and communities) for scientific computing. IPython itself is great for exploratory data analysis. Using tools such as the IPython notebook make it easy to share code and explanations with rich media. IPython makes using IDAPython and interacting with IDA programmatically really fun and easy.
@@ -36,8 +37,9 @@ This plugin should work on all 6.X x86 QT versions of IDA on Windows.
 ##Basic Installation and QTConsole
 1. Download and extract the [release](https://github.com/james91b/ida_ipython/releases/tag/0.1)
 2. Copy files from `python` and `plugins` directories into your IDA directory.
-3. Launch IDA.
-4. At the command line (Windows), start an IPython qtconsole with the kernel instance (outputted in the IDA console) e.g `ipython qtconsole --existing kernel-4264.json`
+3. For `idaq64.exe`, rename the plugin from `*.plw` to `*.p64`. Since we don't use any IDA APIs, it works just fine.
+4. Launch IDA.
+5. At the command line (Windows), start an IPython qtconsole with the kernel instance (outputted in the IDA console) e.g `ipython qtconsole --existing kernel-4264.json`
 
 ##Using the Notebook
 1. Copy `idc` directory to your IDA directory. (the nothing.idc scipt is used to pass command line parameters to the plugin)
@@ -58,6 +60,5 @@ e.g.
 So far only tested with "Visual Studio 11" compiler.
 
 #To do/Future Ideas
-- x64 Support
 - More examples
 - Create a library for cell/line magic functions specific to IDA
