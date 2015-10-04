@@ -13,7 +13,7 @@ try:
         sys.version = '2.7.5 |Anaconda 2.1.0 (32-bit)| (default, May 31 2013, 10:43:53) [MSC v.1500 32 bit (Intel)]'
 
     import __main__
-    from IPython.kernel.zmq.kernelapp import IPKernelApp
+    from ipykernel.kernelapp import IPKernelApp
     from IPython.utils.frame import extract_module_locals
 
     kernel_app = None
@@ -61,7 +61,7 @@ try:
 
         if app.poller is not None:
             app.poller.start()
-            app.poller.start()
+
         app.kernel.start()
         return app
 
