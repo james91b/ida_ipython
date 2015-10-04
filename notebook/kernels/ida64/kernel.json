@@ -1,0 +1,12 @@
+{
+ "display_name": "IDA64",
+ "language": "python",
+ "argv": [
+  "C:\\Program Files (x86)\\IDA 6.8\\idaq64.exe",
+  "-Snothing.idc -f {connection_file}"
+ ],
+ "codemirror_mode": {
+  "version": 2,
+  "name": "ipython"
+ }
+}
