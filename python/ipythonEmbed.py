@@ -113,7 +113,9 @@ try:
 
             return kernel_iteration
         except Exception, e:
+            release_output_streams()
             traceback.print_exc()
+            capture_output_streams()
             raise
         finally:
             release_output_streams()
