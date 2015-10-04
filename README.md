@@ -61,9 +61,13 @@ e.g.
 So far only tested with "Visual Studio 11" compiler.
 
 #Changelog
+0.3
+- 2015-10-04: Running the plugin from the plugins menu will now launch an IPython QTConsole
+- 2015-10-04: Only capture standard output and error when executing the kernel
+
 0.2
-- Running the plugin from the plugins menu will now launch an IPython QTConsole
-- Only capture standard output and error when executing the kernel
+- 2015-09-30: Added support for Jupyter (replaces original support for IPython).
+- 2015-10-01: Added support for ida64.
 
 0.1
 - First release
