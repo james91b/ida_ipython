@@ -83,8 +83,7 @@ try:
                 python_directory = find_python_dir()
                 cmd_line = [
                     "{}/pythonw".format(python_directory),
-                    "{}/Scripts/jupyter-script.py".format(python_directory),
-                    "qtconsole",
+                    "-m", "qtconsole",
                     "--existing", kernel_app.connection_file
                 ]
                 subprocess.Popen(cmd_line,
