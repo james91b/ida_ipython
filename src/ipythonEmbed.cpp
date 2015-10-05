@@ -8,6 +8,7 @@ static const char EVENT_LOOP_FUNC_NAME[] = "?processEvents@QEventDispatcherWin32
 
 static PyObject* kernel_do_one_iteration = NULL;
 static PyObject* commandline_args = NULL;
+static bool attempted_start_kernel = false;
 
 typedef int (__fastcall *tQEventDispatcherWin32)(void*, void*, int);
 tQEventDispatcherWin32 pQEventDispatcherWin32 = NULL;
@@ -70,13 +71,14 @@ void ipython_embed_iteration()
 {
     PyGILState_STATE state = PyGILState_Ensure();
 
-    if (kernel_do_one_iteration == NULL) {
+    if (kernel_do_one_iteration == NULL && !attempted_start_kernel) {
+        attempted_start_kernel = true;
         init_ipython_kernel();
         //TODO: Report the error, call stack ect.
         if ( PyErr_Occurred() ) {
             msg("A Python Error Occurred trying to start the kernel!\n");
         }
-    } else {
+    } else if (kernel_do_one_iteration != NULL) {
         PyObject_CallObject(kernel_do_one_iteration, NULL);
     }
 

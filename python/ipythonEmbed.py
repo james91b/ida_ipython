@@ -1,10 +1,10 @@
+import traceback
 try:
     import os
     import sys
     import platform
     import subprocess
     import idaapi
-    import traceback
 
     #This is a hack to get zmq to work with the Anaconda distribution and IDA.
     try:
@@ -99,11 +99,11 @@ try:
 
     def start(argv=None):
         try:
+            capture_output_streams()
             global kernel_app
             if argv:
                 sys.argv = argv
 
-            capture_output_streams()
             kernel_app = embed_kernel(module=__main__, local_ns={})
 
             def kernel_iteration():
