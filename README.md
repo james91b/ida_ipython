@@ -42,11 +42,10 @@ This plugin should work on all 6.X x86 QT versions of IDA on Windows.
 5. At the command line (Windows), start an IPython qtconsole with the kernel instance (outputted in the IDA console) e.g `ipython qtconsole --existing kernel-4264.json`
 
 ##Using the Notebook
-1. Copy `idc` directory to your IDA directory. (the nothing.idc scipt is used to pass command line parameters to the plugin)
-2. Change the paths to the `idaq.exe` and `idaq64.exe` executables in the `kernel.json` under the `notebook/kernels/ida32`
-   and `notebook/kernels/ida64` directories respectively
-3. Copy the `notebook/kernels` directory to one of Jupyter's data directories, usually `%APPDATA%\jupyter` (list all with
-   `jupyter --paths`)
+1. Copy `idc` directory to your IDA directory. (the `nothing.idc` script is used to pass command line parameters to the plugin)
+2. Change the paths to the `idaq.exe` and `idaq64.exe` executables in the `kernel.json` under the `notebook\kernels\ida32`
+    and `notebook\kernels\ida64` directories respectively
+3. Install the kernels using `ipython kernelspec install` (e.g. `ipython kernelspec install --user notebook\kernels\ida64`)
 4. When starting a notebook, choose the `IDA32` or `IDA64` kernels, depending on your desired IDA version.
 
 #How to Build
