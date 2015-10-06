@@ -52,11 +52,12 @@ This plugin should work on all 6.X x86 QT versions of IDA on Windows.
 #How to Build
 1. Install cmake
 2. At the command line cd to the root directory and run the following
-3. `cd build`
-4. `cmake -G "Visual Studio 11" -D PYTHON_DIR="<YOUR_PYTHON_DIR>" -D IDA_SDK="<YOUR_IDASDK_LOCATION>" -D IDA_DIR="<YOUR_IDA_DIRECTORY>" ..`
+3. `mkdir build`
+4. `cd build`
+5. `cmake -G "Visual Studio 11" -DPYTHON_DIR="<YOUR_PYTHON_DIR>" -DIDA_SDK="<YOUR_IDASDK_LOCATION>" -DIDA_DIR="<YOUR_IDA_DIRECTORY>" ..`
 e.g.
-`cmake -G "Visual Studio 11" -D PYTHON_DIR="C:\Anaconda" -D IDA_SDK="C:\dev\IDA\idasdks\idasdk64" -D IDA_DIR="C:/Program Files (x86)/IDA 6.4" ..`
-5. `cmake --build . --config Release`
+`cmake -G "Visual Studio 11" -DPYTHON_DIR="C:\Anaconda" -DIDA_SDK="C:\dev\IDA\idasdks\idasdk64" -DIDA_DIR="C:/Program Files (x86)/IDA 6.4" ..`
+6. `cmake --build . --config Release`
 
 So far only tested with "Visual Studio 11" compiler.
 

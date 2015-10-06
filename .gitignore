@@ -1,3 +1,4 @@
+build/*
 ### Windows template
 # Windows image file caches
 Thumbs.db
@@ -76,6 +77,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+build/
 develop-eggs/
 dist/
 downloads/
