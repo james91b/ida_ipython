@@ -41,7 +41,9 @@ endif ( )
 set (SOURCES
      src/ida_ipython.cpp
      src/ipythonEmbed.cpp
-     src/ipythonEmbed.h)
+     src/ipythonEmbed.h
+     src/persist.h
+     src/persist.c)
 
 include_directories(${IDA_SDK}/include
                     ${PYTHON_DIR}/include
