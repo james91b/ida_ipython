@@ -43,7 +43,7 @@ set (SOURCES
      src/ipythonEmbed.cpp
      src/ipythonEmbed.h
      src/persist.h
-     src/persist.c)
+     src/persist.cpp)
 
 include_directories(${IDA_SDK}/include
                     ${PYTHON_DIR}/include

@@ -3,7 +3,7 @@
 #include "pro.h"
 #include "ida.hpp"
 
-#include "persist.c"
+#include "persist.h"
 
 //Return the arguments in passed via IDC script arguments as a
 //python list
@@ -65,6 +65,7 @@ int idaapi init(void)
        when it terminates the plugin. */
     success = persist();
     if (0 != success) {
+        warning("Failed to lock the module in memory");
         return PLUGIN_SKIP;
     }
 
