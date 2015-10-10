@@ -3,6 +3,8 @@
 #include "pro.h"
 #include "ida.hpp"
 
+#include "persist.h"
+
 //Return the arguments in passed via IDC script arguments as a
 //python list
 PyObject* idc_script_args()
@@ -38,6 +40,7 @@ PyObject* idc_script_args()
 int idaapi init(void)
 {
     PyObject* idc_args = idc_script_args();
+    int success = -1;
 
     IPYTHONEMBED_STATUS status = ipython_embed_start(idc_args);
     if (status != IPYTHONEMBED_OK) {
@@ -56,6 +59,16 @@ int idaapi init(void)
         }
         return PLUGIN_SKIP;
     }
+
+
+    /* Try and make the module persist in memory until termination. Failing to do so can cause IDA to crash
+       when it terminates the plugin. */
+    success = persist();
+    if (0 != success) {
+        warning("Failed to lock the module in memory");
+        return PLUGIN_SKIP;
+    }
+
     return PLUGIN_KEEP;
 }
 
