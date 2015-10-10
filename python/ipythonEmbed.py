@@ -5,6 +5,7 @@ try:
     import platform
     import subprocess
     import idaapi
+    import atexit
 
     #This is a hack to get zmq to work with the Anaconda distribution and IDA.
     try:
@@ -17,6 +18,7 @@ try:
     from IPython.utils.frame import extract_module_locals
 
     kernel_app = None
+    qtconsole_processes = []
 
     def embed_kernel(module=None, local_ns=None, **kwargs):
         """Embed and start an IPython kernel in a given scope.
@@ -86,15 +88,21 @@ try:
                     "-m", "qtconsole",
                     "--existing", kernel_app.connection_file
                 ]
-                subprocess.Popen(cmd_line,
+                process = subprocess.Popen(cmd_line,
                         stdin=None,
                         stdout=None,
                         stderr=None,
                         close_fds=True)
+                qtconsole_processes.append(process)
             else:
                 print "Error: No kernel defined!"
         except Exception, e:
             traceback.print_exc()
+
+    @atexit.register
+    def kill_qtconsoles():
+        for process in qtconsole_processes:
+            process.kill()
 
     def start(argv=None):
         try:
