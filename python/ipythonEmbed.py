@@ -20,6 +20,7 @@ try:
     from IPython.utils.frame import extract_module_locals
 
     kernel_app = None
+    menu_items = []
 
 
     def embed_kernel(module=None, local_ns=None, **kwargs):
@@ -114,6 +115,16 @@ try:
             traceback.print_exc()
 
 
+    @atexit.register
+    def remove_menus():
+        for menu_item in menu_items:
+            idaapi.del_menu_item(menu_item)
+
+    def add_idaipython_menu():
+        menu_item = idaapi.add_menu_item('View/', 'IDAIPython QtConsole', '', 0, start_qtconsole, tuple())
+        menu_items.append(menu_item)
+
+
     def start(argv=None):
         try:
             with capture_output_streams():
@@ -126,6 +137,8 @@ try:
                 def kernel_iteration():
                     with capture_output_streams():
                         kernel_app.kernel.do_one_iteration()
+
+                add_idaipython_menu()
 
                 return kernel_iteration
         except Exception, e:
