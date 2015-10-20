@@ -1,4 +1,5 @@
 import traceback
+
 try:
     import os
     import sys
@@ -105,26 +106,31 @@ try:
                     "--existing", kernel_app.connection_file
                 ]
                 process = subprocess.Popen(cmd_line,
-                        stdin=None,
-                        stdout=None,
-                        stderr=None,
-                        close_fds=True)
+                    stdin=None,
+                    stdout=None,
+                    stderr=None,
+                    close_fds=True)
                 qtconsole_processes.append(process)
             else:
                 print "Error: No kernel defined!"
         except Exception, e:
             traceback.print_exc()
 
+
     @atexit.register
+    def term():
+        kill_qtconsoles()
+        remove_menus()
+
     def kill_qtconsoles():
         for process in qtconsole_processes:
             process.kill()
 
 
-    @atexit.register
     def remove_menus():
         for menu_item in menu_items:
             idaapi.del_menu_item(menu_item)
+
 
     def add_idaipython_menu():
         menu_item = idaapi.add_menu_item('View/', 'IDAIPython QtConsole', '', 0, start_qtconsole, tuple())
