@@ -1,12 +1,15 @@
 import traceback
+
 try:
     import os
     import sys
     import platform
     import subprocess
     import idaapi
+    import atexit
+    import contextlib
 
-    #This is a hack to get zmq to work with the Anaconda distribution and IDA.
+    # This is a hack to get zmq to work with the Anaconda distribution and IDA.
     try:
         platform.python_implementation()
     except ValueError:
@@ -17,6 +20,8 @@ try:
     from IPython.utils.frame import extract_module_locals
 
     kernel_app = None
+    menu_items = []
+
 
     def embed_kernel(module=None, local_ns=None, **kwargs):
         """Embed and start an IPython kernel in a given scope.
@@ -65,17 +70,30 @@ try:
         app.kernel.start()
         return app
 
-    def capture_output_streams():
-        sys.__stdout__, sys.__stderr__, sys.stdout, sys.stderr =  sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__
 
-    def release_output_streams():
-        sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__ =  sys.__stdout__, sys.__stderr__, sys.stdout, sys.stderr
+    @contextlib.contextmanager
+    def capture_output_streams():
+        _capture_output_streams()
+        try:
+            yield
+        finally:
+            _release_output_streams()
+
+
+    def _capture_output_streams():
+        sys.__stdout__, sys.__stderr__, sys.stdout, sys.stderr = sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__
+
+
+    def _release_output_streams():
+        sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__ = sys.__stdout__, sys.__stderr__, sys.stdout, sys.stderr
+
 
     def find_python_dir():
-        #We need to get the python directory like this, because
-        #sys.executable will return idaq.exe. This just goes two
-        #directories up from os.py location
+        # We need to get the python directory like this, because
+        # sys.executable will return idaq.exe. This just goes two
+        # directories up from os.py location
         return os.path.dirname(os.path.dirname(os.__file__))
+
 
     def start_qtconsole():
         try:
@@ -96,28 +114,36 @@ try:
         except Exception, e:
             traceback.print_exc()
 
+
+    @atexit.register
+    def remove_menus():
+        for menu_item in menu_items:
+            idaapi.del_menu_item(menu_item)
+
+    def add_idaipython_menu():
+        menu_item = idaapi.add_menu_item('View/', 'IDAIPython QtConsole', '', 0, start_qtconsole, tuple())
+        menu_items.append(menu_item)
+
+
     def start(argv=None):
         try:
-            capture_output_streams()
-            global kernel_app
-            if argv:
-                sys.argv = argv
+            with capture_output_streams():
+                global kernel_app
+                if argv:
+                    sys.argv = argv
 
-            kernel_app = embed_kernel(module=__main__, local_ns={})
+                kernel_app = embed_kernel(module=__main__, local_ns={})
 
-            def kernel_iteration():
-                capture_output_streams()
-                kernel_app.kernel.do_one_iteration()
-                release_output_streams()
+                def kernel_iteration():
+                    with capture_output_streams():
+                        kernel_app.kernel.do_one_iteration()
 
-            return kernel_iteration
+                add_idaipython_menu()
+
+                return kernel_iteration
         except Exception, e:
-            release_output_streams()
             traceback.print_exc()
-            capture_output_streams()
             raise
-        finally:
-            release_output_streams()
 
 except Exception, e:
     traceback.print_exc()
