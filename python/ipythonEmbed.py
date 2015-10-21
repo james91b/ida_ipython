@@ -1,8 +1,15 @@
+import traceback
+
 try:
+    import os
     import sys
     import platform
+    import subprocess
+    import idaapi
+    import atexit
+    import contextlib
 
-    #This is a hack to get zmq to work with the Anaconda distribution and IDA.
+    # This is a hack to get zmq to work with the Anaconda distribution and IDA.
     try:
         platform.python_implementation()
     except ValueError:
@@ -12,7 +19,10 @@ try:
     from ipykernel.kernelapp import IPKernelApp
     from IPython.utils.frame import extract_module_locals
 
-    sys.__stdout__ = sys.__stderr__ =  sys.stdout
+    kernel_app = None
+    menu_items = []
+    qtconsole_processes = []
+
 
     def embed_kernel(module=None, local_ns=None, **kwargs):
         """Embed and start an IPython kernel in a given scope.
@@ -57,15 +67,95 @@ try:
 
         if app.poller is not None:
             app.poller.start()
+
         app.kernel.start()
         return app
 
+
+    @contextlib.contextmanager
+    def capture_output_streams():
+        _capture_output_streams()
+        try:
+            yield
+        finally:
+            _release_output_streams()
+
+
+    def _capture_output_streams():
+        sys.__stdout__, sys.__stderr__, sys.stdout, sys.stderr = sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__
+
+
+    def _release_output_streams():
+        sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__ = sys.__stdout__, sys.__stderr__, sys.stdout, sys.stderr
+
+
+    def find_python_dir():
+        # We need to get the python directory like this, because
+        # sys.executable will return idaq.exe. This just goes two
+        # directories up from os.py location
+        return os.path.dirname(os.path.dirname(os.__file__))
+
+
+    def start_qtconsole():
+        try:
+            if kernel_app:
+                python_directory = find_python_dir()
+                cmd_line = [
+                    "{}/pythonw".format(python_directory),
+                    "-m", "qtconsole",
+                    "--existing", kernel_app.connection_file
+                ]
+                process = subprocess.Popen(cmd_line,
+                    stdin=None,
+                    stdout=None,
+                    stderr=None,
+                    close_fds=True)
+                qtconsole_processes.append(process)
+            else:
+                print "Error: No kernel defined!"
+        except Exception, e:
+            traceback.print_exc()
+
+
+    @atexit.register
+    def term():
+        kill_qtconsoles()
+        remove_menus()
+
+    def kill_qtconsoles():
+        for process in qtconsole_processes:
+            process.kill()
+
+
+    def remove_menus():
+        for menu_item in menu_items:
+            idaapi.del_menu_item(menu_item)
+
+
+    def add_idaipython_menu():
+        menu_item = idaapi.add_menu_item('View/', 'IDAIPython QtConsole', '', 0, start_qtconsole, tuple())
+        menu_items.append(menu_item)
+
+
     def start(argv=None):
-        if argv:
-            sys.argv = argv
-        kapp = embed_kernel(module=__main__, local_ns={})
-        return kapp.kernel.do_one_iteration
+        try:
+            with capture_output_streams():
+                global kernel_app
+                if argv:
+                    sys.argv = argv
+
+                kernel_app = embed_kernel(module=__main__, local_ns={})
+
+                def kernel_iteration():
+                    with capture_output_streams():
+                        kernel_app.kernel.do_one_iteration()
+
+                add_idaipython_menu()
+
+                return kernel_iteration
+        except Exception, e:
+            traceback.print_exc()
+            raise
 
 except Exception, e:
-    import traceback
     traceback.print_exc()

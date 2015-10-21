@@ -2,11 +2,13 @@
 
 static const char IPYTHON_EMBED_MODULE[] = "ipythonEmbed";
 static const char IPYTHON_EMBED_START_METHOD_NAME[] = "start";
+static const char IPYTHON_EMBED_START_QTCONSOLE_METHOD_NAME[] = "start_qtconsole";
 static const char QT_MODULE_NAME[] = "qtcore4.dll";
 static const char EVENT_LOOP_FUNC_NAME[] = "?processEvents@QEventDispatcherWin32@QT@@UAE_NV?$QFlags@W4ProcessEventsFlag@QEventLoop@QT@@@2@@Z";
 
 static PyObject* kernel_do_one_iteration = NULL;
 static PyObject* commandline_args = NULL;
+static bool attempted_start_kernel = false;
 
 typedef int (__fastcall *tQEventDispatcherWin32)(void*, void*, int);
 tQEventDispatcherWin32 pQEventDispatcherWin32 = NULL;
@@ -69,13 +71,14 @@ void ipython_embed_iteration()
 {
     PyGILState_STATE state = PyGILState_Ensure();
 
-    if (kernel_do_one_iteration == NULL) {
+    if (kernel_do_one_iteration == NULL && !attempted_start_kernel) {
+        attempted_start_kernel = true;
         init_ipython_kernel();
         //TODO: Report the error, call stack ect.
         if ( PyErr_Occurred() ) {
             msg("A Python Error Occurred trying to start the kernel!\n");
         }
-    } else {
+    } else if (kernel_do_one_iteration != NULL) {
         PyObject_CallObject(kernel_do_one_iteration, NULL);
     }
 
@@ -104,6 +107,39 @@ int __fastcall DetourQEventDispatcherWin32(void* ecx, void* edx, int i)
     }
 
     return 0;
+}
+
+void ipython_start_qtconsole()
+{
+    PyGILState_STATE state = PyGILState_Ensure();
+
+    PyObject *ipython_embed_module = NULL,
+             *ipython_qtconsole_func = NULL;
+
+    ipython_embed_module = PyImport_ImportModule(IPYTHON_EMBED_MODULE);
+    if (ipython_embed_module == NULL) {
+        warning("could not import ipythonEmbed module");
+        goto cleanup;
+    }
+
+    ipython_qtconsole_func = PyObject_GetAttrString(ipython_embed_module, IPYTHON_EMBED_START_QTCONSOLE_METHOD_NAME);
+    if (ipython_qtconsole_func == NULL) {
+        warning("could not find start_qtconsole function");
+        goto cleanup;
+    }
+
+    if (!PyCallable_Check(ipython_qtconsole_func)) {
+        warning("ipython start_qtconsole function is not callable");
+        goto cleanup;
+    }
+
+    PyObject_CallObject(ipython_qtconsole_func, NULL);
+
+cleanup:
+    Py_XDECREF(ipython_embed_module);
+    Py_XDECREF(ipython_qtconsole_func);
+
+    PyGILState_Release(state);
 }
 
 IPYTHONEMBED_STATUS ipython_embed_start(PyObject* cmdline)

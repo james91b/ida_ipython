@@ -3,6 +3,8 @@
 #include "pro.h"
 #include "ida.hpp"
 
+#include "persist.h"
+
 //Return the arguments in passed via IDC script arguments as a
 //python list
 PyObject* idc_script_args()
@@ -38,6 +40,7 @@ PyObject* idc_script_args()
 int idaapi init(void)
 {
     PyObject* idc_args = idc_script_args();
+    int success = -1;
 
     IPYTHONEMBED_STATUS status = ipython_embed_start(idc_args);
     if (status != IPYTHONEMBED_OK) {
@@ -56,30 +59,44 @@ int idaapi init(void)
         }
         return PLUGIN_SKIP;
     }
+
+
+    /* Try and make the module persist in memory until termination. Failing to do so can cause IDA to crash
+       when it terminates the plugin. */
+    success = persist();
+    if (0 != success) {
+        warning("Failed to lock the module in memory");
+        return PLUGIN_SKIP;
+    }
+
     return PLUGIN_KEEP;
 }
 
 void idaapi term(void)
 {
-    ipython_embed_term();
+  ipython_embed_term();
 }
 
+void idaapi run(int options)
+{
+  ipython_start_qtconsole();
+}
 //--------------------------------------------------------------------------
 //
 //      PLUGIN DESCRIPTION BLOCK
 //
 //--------------------------------------------------------------------------
-static char wanted_name[] = "IDA IPython Kernel";
+static char wanted_name[] = "IDA IPython QTConsole";
 static char comment[] = "Runs an IPython Kernel within IDA";
 static char help[] = "This plugin allows the user to run an IPython kernel within IDA\n";
 
 plugin_t PLUGIN =
 {
   IDP_INTERFACE_VERSION,
-  PLUGIN_FIX | PLUGIN_HIDE,           // plugin flags
+  PLUGIN_FIX,           // plugin flags
   init,                 // initialize
   term,                 // terminate. this pointer may be NULL.
-  NULL,                 // invoke plugin
+  run,                  // invoke plugin
   comment,              // long comment about the plugin
                         // it could appear in the status line
                         // or as a hint
