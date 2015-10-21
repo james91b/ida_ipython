@@ -36,7 +36,7 @@ I suggest using the [Anaconda](http://continuum.io/downloads) distribution of Py
 This plugin should work on all 6.X x86 QT versions of IDA on Windows.
 
 ##Basic Installation and QTConsole
-1. Download and extract the [release](https://github.com/tmr232/ida_ipython/releases/tag/0.2)
+1. Download and extract the [release](https://github.com/tmr232/ida_ipython/releases/tag/0.3)
 2. Copy the contents of the `plugins` and `python` directories under IDA's installation directory.
 4. Launch IDA.
 5. At the command line (Windows), start an IPython qtconsole with the kernel instance (outputted in the IDA console) e.g `ipython qtconsole --existing kernel-4264.json`
@@ -62,8 +62,9 @@ So far only tested with "Visual Studio 11" compiler.
 
 #Changelog
 0.3
-- 2015-10-04: Running the plugin from the plugins menu will now launch an IPython QTConsole
+- 2015-10-04: Running the plugin from the plugins menu or view menu will now launch an IPython QTConsole. Consoles are terminated on exit.
 - 2015-10-04: Only capture standard output and error when executing the kernel
+- 2015-10-21: Improve error reporting
 
 0.2
 - 2015-09-30: Added support for Jupyter (replaces original support for IPython).
