@@ -24,6 +24,7 @@ Another useful case is using IPython notebooks.
 
 - [Function Entropy](http://nbviewer.ipython.org/github/james91b/ida_ipython/blob/master/notebook/examples/Function%20Entropy.ipynb) - Here is an example where we compute the entropy (using scipy stats module) of each function in notepad.exe and graph the result.
 - [Cython and IDA](http://nbviewer.ipython.org/github/james91b/ida_ipython/blob/master/notebook/examples/Cython%20and%20IDA.ipynb) - Here is an example where we use the cython cell magic to call IDA Api's that are not exposed via IDAPython.
+- [Sark Snapshots](http://nbviewer.ipython.org/github/james91b/ida_ipython/blob/master/notebook/examples/Sark%20Snapshots.ipynb) - Example of screen snapshots using Sark.
 
 More examples..soon...
 
