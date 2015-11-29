@@ -3,7 +3,7 @@
 static const char IPYTHON_EMBED_MODULE[] = "ipythonEmbed";
 static const char IPYTHON_EMBED_START_METHOD_NAME[] = "start";
 static const char IPYTHON_EMBED_START_QTCONSOLE_METHOD_NAME[] = "start_qtconsole";
-static const char QT_MODULE_NAME[] = "qtcore4.dll";
+static const char QT_MODULE_NAME[] = "qt5core.dll";
 static const char EVENT_LOOP_FUNC_NAME[] = "?processEvents@QEventDispatcherWin32@QT@@UAE_NV?$QFlags@W4ProcessEventsFlag@QEventLoop@QT@@@2@@Z";
 
 static PyObject* kernel_do_one_iteration = NULL;
