@@ -3,7 +3,8 @@
 static const char IPYTHON_EMBED_MODULE[] = "ipythonEmbed";
 static const char IPYTHON_EMBED_START_METHOD_NAME[] = "start";
 static const char IPYTHON_EMBED_START_QTCONSOLE_METHOD_NAME[] = "start_qtconsole";
-static const char QT_MODULE_NAME[] = "qt5core.dll";
+static const char QT4_MODULE_NAME[] = "QtCore4.dll";
+static const char QT5_MODULE_NAME[] = "Qt5Core.dll";
 static const char EVENT_LOOP_FUNC_NAME[] = "?processEvents@QEventDispatcherWin32@QT@@UAE_NV?$QFlags@W4ProcessEventsFlag@QEventLoop@QT@@@2@@Z";
 
 static PyObject* kernel_do_one_iteration = NULL;
@@ -88,7 +89,12 @@ void ipython_embed_iteration()
 
 FARPROC eventloop_address()
 {
-    HMODULE qtmodule = GetModuleHandleA(QT_MODULE_NAME);
+    HMODULE qtmodule = GetModuleHandleA(QT4_MODULE_NAME);
+    
+    if (NULL == qtmodule) {
+        qtmodule = GetModuleHandleA(QT5_MODULE_NAME);
+    }
+    
     FARPROC src = GetProcAddress(qtmodule, EVENT_LOOP_FUNC_NAME);
     return src;
 }
