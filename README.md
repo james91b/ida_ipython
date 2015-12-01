@@ -1,8 +1,5 @@
 # What's New
-
-- 2015-09-30: Added support for Jupyter (replaces original support for IPython). 
-- 2015-10-01: Added support for ida64.
-- 2015-10-04: Added support for multiple kernels.
+- Added IDA 6.9 support
 
 #What and Why?
 This is a plugin to embed an IPython kernel in IDA Pro. The Python ecosystem has amazing libraries (and communities) for scientific computing. IPython itself is great for exploratory data analysis. Using tools such as the IPython notebook make it easy to share code and explanations with rich media. IPython makes using IDAPython and interacting with IDA programmatically really fun and easy.
@@ -37,7 +34,7 @@ I suggest using the [Anaconda](http://continuum.io/downloads) distribution of Py
 This plugin should work on all 6.X x86 QT versions of IDA on Windows.
 
 ##Basic Installation and QTConsole
-1. Download and extract the [release](https://github.com/james91b/ida_ipython/releases/tag/0.3)
+1. Download and extract the [release](https://github.com/james91b/ida_ipython/releases/tag/0.4)
 2. Copy the contents of the `plugins` and `python` directories under IDA's installation directory.
 4. Launch IDA.
 5. At the command line (Windows), start an IPython qtconsole with the kernel instance (outputted in the IDA console) e.g `ipython qtconsole --existing kernel-4264.json`
@@ -62,6 +59,9 @@ e.g.
 So far only tested with "Visual Studio 11" compiler.
 
 #Changelog
+0.4
+- Added IDA 6.9 support
+
 0.3
 - 2015-10-04: Running the plugin from the plugins menu or view menu will now launch an IPython QTConsole. Consoles are terminated on exit.
 - 2015-10-04: Only capture standard output and error when executing the kernel
