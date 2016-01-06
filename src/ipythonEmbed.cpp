@@ -6,6 +6,10 @@ static const char IPYTHON_EMBED_START_QTCONSOLE_METHOD_NAME[] = "start_qtconsole
 static const char QT4_MODULE_NAME[] = "QtCore4.dll";
 static const char QT5_MODULE_NAME[] = "Qt5Core.dll";
 static const char EVENT_LOOP_FUNC_NAME[] = "?processEvents@QEventDispatcherWin32@QT@@UAE_NV?$QFlags@W4ProcessEventsFlag@QEventLoop@QT@@@2@@Z";
+static const char PYTHON_DLL_NAME[] = "python27.dll";
+static const char IDAPYTHON_DLL_NAME[] = "python.plw";
+static const char IDAPYTHON64_DLL_NAME[] = "python.p64";
+
 
 static PyObject* kernel_do_one_iteration = NULL;
 static PyObject* commandline_args = NULL;
@@ -70,6 +74,9 @@ void init_ipython_kernel(void)
 
 void ipython_embed_iteration()
 {
+	if (FALSE == IsIDAPythonPresent()) {
+		return;
+	}
     PyGILState_STATE state = PyGILState_Ensure();
 
     if (kernel_do_one_iteration == NULL && !attempted_start_kernel) {
@@ -106,10 +113,11 @@ int __fastcall DetourQEventDispatcherWin32(void* ecx, void* edx, int i)
         return pQEventDispatcherWin32(ecx, edx, i);
     } catch (const std::exception& ex) {
         std::string error = ex.what();
+		error = "[IDA IPython] " + error;
         const char *cstr = error.c_str();
         warning(cstr);
     } catch (...) {
-        warning("Something went wrong in the detour!");
+        warning("[IDA IPython] Something went wrong in the detour!");
     }
 
     return 0;
@@ -117,6 +125,9 @@ int __fastcall DetourQEventDispatcherWin32(void* ecx, void* edx, int i)
 
 void ipython_start_qtconsole()
 {
+	if (FALSE == IsIDAPythonPresent()) {
+		return;
+	}
     PyGILState_STATE state = PyGILState_Ensure();
 
     PyObject *ipython_embed_module = NULL,
@@ -124,18 +135,18 @@ void ipython_start_qtconsole()
 
     ipython_embed_module = PyImport_ImportModule(IPYTHON_EMBED_MODULE);
     if (ipython_embed_module == NULL) {
-        warning("could not import ipythonEmbed module");
+        warning("[IDA IPython] could not import ipythonEmbed module");
         goto cleanup;
     }
 
     ipython_qtconsole_func = PyObject_GetAttrString(ipython_embed_module, IPYTHON_EMBED_START_QTCONSOLE_METHOD_NAME);
     if (ipython_qtconsole_func == NULL) {
-        warning("could not find start_qtconsole function");
+        warning("[IDA IPython] could not find start_qtconsole function");
         goto cleanup;
     }
 
     if (!PyCallable_Check(ipython_qtconsole_func)) {
-        warning("ipython start_qtconsole function is not callable");
+        warning("[IDA IPython] ipython start_qtconsole function is not callable");
         goto cleanup;
     }
 
@@ -146,6 +157,23 @@ cleanup:
     Py_XDECREF(ipython_qtconsole_func);
 
     PyGILState_Release(state);
+}
+
+BOOL IsIDAPythonPresent(void) {
+	static BOOL bIsPresent = FALSE;
+
+	if (NULL == GetModuleHandleA(PYTHON_DLL_NAME)) {
+		bIsPresent = FALSE;
+	} 
+	else if ((NULL == GetModuleHandleA(IDAPYTHON_DLL_NAME)) &&
+		(NULL == GetModuleHandleA(IDAPYTHON64_DLL_NAME))) {
+		bIsPresent = FALSE;
+	}
+	else {
+		bIsPresent = TRUE;
+	}
+
+	return bIsPresent;
 }
 
 IPYTHONEMBED_STATUS ipython_embed_start(PyObject* cmdline)
