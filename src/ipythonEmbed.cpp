@@ -1,4 +1,7 @@
 #include "ipythonEmbed.h"
+#include <windows.h>
+#include <tlhelp32.h>
+#include <Psapi.h>
 
 static const char IPYTHON_EMBED_MODULE[] = "ipythonEmbed";
 static const char IPYTHON_EMBED_START_METHOD_NAME[] = "start";
@@ -68,14 +71,68 @@ void init_ipython_kernel(void)
     kernel_do_one_iteration = start_ipython_kernel(commandline_args);
 }
 
+DWORD get_parent_pid() {
+	HANDLE hSnapshot;
+	PROCESSENTRY32 pe32;
+	DWORD ppid = 0, pid = GetCurrentProcessId();
+
+	hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	__try {
+		if (hSnapshot == INVALID_HANDLE_VALUE) __leave;
+
+		ZeroMemory(&pe32, sizeof(pe32));
+		pe32.dwSize = sizeof(pe32);
+		if (!Process32First(hSnapshot, &pe32)) __leave;
+
+		do {
+			if (pe32.th32ProcessID == pid) {
+				ppid = pe32.th32ParentProcessID;
+				break;
+			}
+		} while (Process32Next(hSnapshot, &pe32));
+
+	}
+	__finally {
+		if (hSnapshot != INVALID_HANDLE_VALUE) CloseHandle(hSnapshot);
+	}
+	return ppid;
+}
+
+HANDLE get_parent_handle() {
+	HANDLE hParentProcess = OpenProcess(SYNCHRONIZE, FALSE, get_parent_pid());
+	return hParentProcess;
+	//TODO: add some sort of validation, that this is indeed the parent process.
+}
+
+BOOL is_parent_dead() {
+	static HANDLE hParentProcess = NULL;
+	DWORD dwResult;
+	
+	if (NULL == hParentProcess) {
+		hParentProcess = get_parent_handle();
+	}
+
+	dwResult = WaitForSingleObject(hParentProcess, 0);
+	if (WAIT_OBJECT_0 == dwResult) {
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 void ipython_embed_iteration()
 {
+	if (TRUE == is_parent_dead()) {
+		ipython_embed_term();
+		qexit(0);
+	}
+
     PyGILState_STATE state = PyGILState_Ensure();
 
     if (kernel_do_one_iteration == NULL && !attempted_start_kernel) {
         attempted_start_kernel = true;
         init_ipython_kernel();
-        //TODO: Report the error, call stack ect.
+        //TODO: Report the error, call stack etc.
         if ( PyErr_Occurred() ) {
             msg("A Python Error Occurred trying to start the kernel!\n");
         }
