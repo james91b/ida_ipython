@@ -11,6 +11,7 @@ static const char IDA_PYTHON_PLUGIN[] = "python";
 static PyObject* kernel_do_one_iteration = NULL;
 static PyObject* commandline_args = NULL;
 static bool attempted_start_kernel = false;
+static bool python_loaded = false;
 
 typedef int (__fastcall *tQEventDispatcherWin32)(void*, void*, int);
 tQEventDispatcherWin32 pQEventDispatcherWin32 = NULL;
@@ -64,7 +65,7 @@ bool load_python(void)
 
 void init_ipython_kernel(void)
 {
-    bool python_loaded = load_python();
+    python_loaded = load_python();
     if (python_loaded) {
         PyGILState_STATE state = PyGILState_Ensure();
         kernel_do_one_iteration = start_ipython_kernel(commandline_args);
@@ -118,9 +119,11 @@ int __fastcall DetourQEventDispatcherWin32(void* ecx, void* edx, int i)
 
 void ipython_start_qtconsole()
 {
-	if (FALSE == IsIDAPythonPresent()) {
+	if (!python_loaded) {
+	    warning("[IDA IPython] Cannot start console. Python plugin has not been loaded.");
 		return;
 	}
+
     PyGILState_STATE state = PyGILState_Ensure();
 
     PyObject *ipython_embed_module = NULL,
@@ -150,23 +153,6 @@ cleanup:
     Py_XDECREF(ipython_qtconsole_func);
 
     PyGILState_Release(state);
-}
-
-BOOL IsIDAPythonPresent(void) {
-	static BOOL bIsPresent = FALSE;
-
-	if (NULL == GetModuleHandleA(PYTHON_DLL_NAME)) {
-		bIsPresent = FALSE;
-	} 
-	else if ((NULL == GetModuleHandleA(IDAPYTHON_DLL_NAME)) &&
-		(NULL == GetModuleHandleA(IDAPYTHON64_DLL_NAME))) {
-		bIsPresent = FALSE;
-	}
-	else {
-		bIsPresent = TRUE;
-	}
-
-	return bIsPresent;
 }
 
 IPYTHONEMBED_STATUS ipython_embed_start(PyObject* cmdline)
