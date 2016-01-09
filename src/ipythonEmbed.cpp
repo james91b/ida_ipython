@@ -107,7 +107,7 @@ int __fastcall DetourQEventDispatcherWin32(void* ecx, void* edx, int i)
         return pQEventDispatcherWin32(ecx, edx, i);
     } catch (const std::exception& ex) {
         std::string error = ex.what();
-		error = "[IDA IPython] " + error;
+        error = "[IDA IPython] " + error;
         const char *cstr = error.c_str();
         warning(cstr);
     } catch (...) {
@@ -120,8 +120,8 @@ int __fastcall DetourQEventDispatcherWin32(void* ecx, void* edx, int i)
 void ipython_start_qtconsole()
 {
 	if (!python_loaded) {
-	    warning("[IDA IPython] Cannot start console. Python plugin has not been loaded.");
-		return;
+        warning("[IDA IPython] Cannot start console. Python plugin has not been loaded.");
+        return;
 	}
 
     PyGILState_STATE state = PyGILState_Ensure();
