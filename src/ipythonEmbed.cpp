@@ -6,6 +6,7 @@ static const char IPYTHON_EMBED_START_QTCONSOLE_METHOD_NAME[] = "start_qtconsole
 static const char QT4_MODULE_NAME[] = "QtCore4.dll";
 static const char QT5_MODULE_NAME[] = "Qt5Core.dll";
 static const char EVENT_LOOP_FUNC_NAME[] = "?processEvents@QEventDispatcherWin32@QT@@UAE_NV?$QFlags@W4ProcessEventsFlag@QEventLoop@QT@@@2@@Z";
+static const char IDA_PYTHON_PLUGIN[] = "python";
 
 static PyObject* kernel_do_one_iteration = NULL;
 static PyObject* commandline_args = NULL;
@@ -54,47 +55,46 @@ cleanup:
     return ipython_kernel;
 }
 
-void init_python(void)
+bool load_python(void)
 {
     // Make sure the python is initialized
-    if (!Py_IsInitialized()) {
-        Py_Initialize();
-    }
+    plugin_t *python = load_plugin(IDA_PYTHON_PLUGIN);
+    return python != NULL;
 }
 
 void init_ipython_kernel(void)
 {
-    init_python();
-    kernel_do_one_iteration = start_ipython_kernel(commandline_args);
+    bool python_loaded = load_python();
+    if (python_loaded) {
+        PyGILState_STATE state = PyGILState_Ensure();
+        kernel_do_one_iteration = start_ipython_kernel(commandline_args);
+        if ( PyErr_Occurred() ) {
+            msg("A Python Error Occurred trying to start the kernel!\n");
+        }
+        PyGILState_Release(state);
+    }
 }
 
 void ipython_embed_iteration()
 {
-    PyGILState_STATE state = PyGILState_Ensure();
-
     if (kernel_do_one_iteration == NULL && !attempted_start_kernel) {
         attempted_start_kernel = true;
         init_ipython_kernel();
-        //TODO: Report the error, call stack ect.
-        if ( PyErr_Occurred() ) {
-            msg("A Python Error Occurred trying to start the kernel!\n");
-        }
     } else if (kernel_do_one_iteration != NULL) {
+        PyGILState_STATE state = PyGILState_Ensure();
         PyObject_CallObject(kernel_do_one_iteration, NULL);
+        PyGILState_Release(state);
     }
-
-    PyGILState_Release(state);
-
 }
 
 FARPROC eventloop_address()
 {
     HMODULE qtmodule = GetModuleHandleA(QT4_MODULE_NAME);
-    
+
     if (NULL == qtmodule) {
         qtmodule = GetModuleHandleA(QT5_MODULE_NAME);
     }
-    
+
     FARPROC src = GetProcAddress(qtmodule, EVENT_LOOP_FUNC_NAME);
     return src;
 }
