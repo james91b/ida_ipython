@@ -5,6 +5,7 @@
 
 #include "persist.h"
 
+
 //Return the arguments in passed via IDC script arguments as a
 //python list
 PyObject* idc_script_args()
@@ -46,16 +47,16 @@ int idaapi init(void)
     if (status != IPYTHONEMBED_OK) {
         switch (status) {
             case IPYTHONEMBED_MINHOOK_INIT_FAILED:
-                warning("Failed to initialize MinHook");
+                warning("[IDA IPython] Failed to initialize MinHook");
                 break;
             case IPYTHONEMBED_CREATE_HOOK_FAILED:
-                warning("Failed to create the QT hook");
+                warning("[IDA IPython] Failed to create the QT hook");
                 break;
             case IPYTHONEMBED_ENABLE_HOOK_FAILED:
-                warning("Failed to enable the QT hook");
+                warning("[IDA IPython] Failed to enable the QT hook");
                 break;
             default:
-                warning("Failed to start ipython kernel");
+                warning("[IDA IPython] Failed to start ipython kernel");
         }
         return PLUGIN_SKIP;
     }
@@ -65,7 +66,7 @@ int idaapi init(void)
        when it terminates the plugin. */
     success = persist();
     if (0 != success) {
-        warning("Failed to lock the module in memory");
+        warning("[IDA IPython] Failed to lock the module in memory");
         return PLUGIN_SKIP;
     }
 
@@ -79,7 +80,7 @@ void idaapi term(void)
 
 void idaapi run(int options)
 {
-  ipython_start_qtconsole();
+	ipython_start_qtconsole();
 }
 //--------------------------------------------------------------------------
 //
