@@ -2,11 +2,12 @@ import win32process
 import win32event
 import sys
 
-args = 'C:\\Program Files (x86)\\IDA 6.8\\idaq.exe "-Snothing.idc -f {connection_file}"'
+args = '"{idaq_path}" "-Snothing.idc -f {connection_file}"'
 
 if __name__ == '__main__':
     hProcess, hThread, dwProcessId, dwThreadId = win32process.CreateProcess(None,
-                                                                            args.format(connection_file=sys.argv[1]),
+                                                                            args.format(idaq_path=sys.argv[1],
+                                                                                        connection_file=sys.argv[2]),
                                                                             None,
                                                                             None,
                                                                             0,
