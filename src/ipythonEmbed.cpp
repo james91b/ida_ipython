@@ -105,6 +105,12 @@ HANDLE get_parent_handle() {
 }
 
 BOOL is_parent_dead() {
+	int nArgs = 0;
+
+	qstrvec_t out_args;
+	nArgs = parse_command_line3(GetCommandLineA(), &out_args, NULL, 0);
+
+
 	static HANDLE hParentProcess = NULL;
 	DWORD dwResult;
 	
