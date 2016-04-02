@@ -6,10 +6,12 @@ static const char IPYTHON_EMBED_START_QTCONSOLE_METHOD_NAME[] = "start_qtconsole
 static const char QT4_MODULE_NAME[] = "QtCore4.dll";
 static const char QT5_MODULE_NAME[] = "Qt5Core.dll";
 static const char EVENT_LOOP_FUNC_NAME[] = "?processEvents@QEventDispatcherWin32@QT@@UAE_NV?$QFlags@W4ProcessEventsFlag@QEventLoop@QT@@@2@@Z";
+static const char IDA_PYTHON_PLUGIN[] = "python";
 
 static PyObject* kernel_do_one_iteration = NULL;
 static PyObject* commandline_args = NULL;
 static bool attempted_start_kernel = false;
+static bool python_loaded = false;
 
 typedef int (__fastcall *tQEventDispatcherWin32)(void*, void*, int);
 tQEventDispatcherWin32 pQEventDispatcherWin32 = NULL;
@@ -54,47 +56,46 @@ cleanup:
     return ipython_kernel;
 }
 
-void init_python(void)
+bool load_python(void)
 {
     // Make sure the python is initialized
-    if (!Py_IsInitialized()) {
-        Py_Initialize();
-    }
+    plugin_t *python = load_plugin(IDA_PYTHON_PLUGIN);
+    return python != NULL;
 }
 
 void init_ipython_kernel(void)
 {
-    init_python();
-    kernel_do_one_iteration = start_ipython_kernel(commandline_args);
+    python_loaded = load_python();
+    if (python_loaded) {
+        PyGILState_STATE state = PyGILState_Ensure();
+        kernel_do_one_iteration = start_ipython_kernel(commandline_args);
+        if ( PyErr_Occurred() ) {
+            msg("A Python Error Occurred trying to start the kernel!\n");
+        }
+        PyGILState_Release(state);
+    }
 }
 
 void ipython_embed_iteration()
 {
-    PyGILState_STATE state = PyGILState_Ensure();
-
     if (kernel_do_one_iteration == NULL && !attempted_start_kernel) {
         attempted_start_kernel = true;
         init_ipython_kernel();
-        //TODO: Report the error, call stack ect.
-        if ( PyErr_Occurred() ) {
-            msg("A Python Error Occurred trying to start the kernel!\n");
-        }
     } else if (kernel_do_one_iteration != NULL) {
+        PyGILState_STATE state = PyGILState_Ensure();
         PyObject_CallObject(kernel_do_one_iteration, NULL);
+        PyGILState_Release(state);
     }
-
-    PyGILState_Release(state);
-
 }
 
 FARPROC eventloop_address()
 {
     HMODULE qtmodule = GetModuleHandleA(QT4_MODULE_NAME);
-    
+
     if (NULL == qtmodule) {
         qtmodule = GetModuleHandleA(QT5_MODULE_NAME);
     }
-    
+
     FARPROC src = GetProcAddress(qtmodule, EVENT_LOOP_FUNC_NAME);
     return src;
 }
@@ -106,10 +107,11 @@ int __fastcall DetourQEventDispatcherWin32(void* ecx, void* edx, int i)
         return pQEventDispatcherWin32(ecx, edx, i);
     } catch (const std::exception& ex) {
         std::string error = ex.what();
+        error = "[IDA IPython] " + error;
         const char *cstr = error.c_str();
         warning(cstr);
     } catch (...) {
-        warning("Something went wrong in the detour!");
+        warning("[IDA IPython] Something went wrong in the detour!");
     }
 
     return 0;
@@ -117,6 +119,11 @@ int __fastcall DetourQEventDispatcherWin32(void* ecx, void* edx, int i)
 
 void ipython_start_qtconsole()
 {
+	if (!python_loaded) {
+        warning("[IDA IPython] Cannot start console. Python plugin has not been loaded.");
+        return;
+	}
+
     PyGILState_STATE state = PyGILState_Ensure();
 
     PyObject *ipython_embed_module = NULL,
@@ -124,18 +131,18 @@ void ipython_start_qtconsole()
 
     ipython_embed_module = PyImport_ImportModule(IPYTHON_EMBED_MODULE);
     if (ipython_embed_module == NULL) {
-        warning("could not import ipythonEmbed module");
+        warning("[IDA IPython] could not import ipythonEmbed module");
         goto cleanup;
     }
 
     ipython_qtconsole_func = PyObject_GetAttrString(ipython_embed_module, IPYTHON_EMBED_START_QTCONSOLE_METHOD_NAME);
     if (ipython_qtconsole_func == NULL) {
-        warning("could not find start_qtconsole function");
+        warning("[IDA IPython] could not find start_qtconsole function");
         goto cleanup;
     }
 
     if (!PyCallable_Check(ipython_qtconsole_func)) {
-        warning("ipython start_qtconsole function is not callable");
+        warning("[IDA IPython] ipython start_qtconsole function is not callable");
         goto cleanup;
     }
 
