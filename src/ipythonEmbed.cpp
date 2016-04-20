@@ -1,4 +1,7 @@
 #include "ipythonEmbed.h"
+#include <windows.h>
+#include <tlhelp32.h>
+#include <Psapi.h>
 
 static const char IPYTHON_EMBED_MODULE[] = "ipythonEmbed";
 static const char IPYTHON_EMBED_START_METHOD_NAME[] = "start";
@@ -6,6 +9,8 @@ static const char IPYTHON_EMBED_START_QTCONSOLE_METHOD_NAME[] = "start_qtconsole
 static const char QT4_MODULE_NAME[] = "QtCore4.dll";
 static const char QT5_MODULE_NAME[] = "Qt5Core.dll";
 static const char EVENT_LOOP_FUNC_NAME[] = "?processEvents@QEventDispatcherWin32@QT@@UAE_NV?$QFlags@W4ProcessEventsFlag@QEventLoop@QT@@@2@@Z";
+static const char PARENT_PID_ENV_NAME[] = "PARENT_PROCESS_PID";
+
 
 static PyObject* kernel_do_one_iteration = NULL;
 static PyObject* commandline_args = NULL;
@@ -68,14 +73,83 @@ void init_ipython_kernel(void)
     kernel_do_one_iteration = start_ipython_kernel(commandline_args);
 }
 
+DWORD get_parent_pid() {
+	static BOOL already_check_environment = FALSE;
+	static DWORD ppid = 0;
+
+	if (TRUE == already_check_environment) {
+		return ppid;
+	}
+	
+	/* Get the environment variable for the parent pid */
+	char pszPidString[30];
+	DWORD ret = GetEnvironmentVariableA(PARENT_PID_ENV_NAME, pszPidString, sizeof(pszPidString));
+
+	already_check_environment = TRUE;
+
+	if ((0 == ret) || (sizeof(pszPidString) == ret)) {
+		OutputDebugStringA("No parent PID provided.");
+		return 0;
+	}
+
+	
+	/* Parse it into a number and return it.*/
+	OutputDebugStringA("Found parent PID");
+	ppid = strtoul(pszPidString, NULL, 10);
+}
+
+HANDLE get_parent_handle() {
+	DWORD ppid = get_parent_pid();
+	if (0 == ppid) {
+		return NULL;
+	}
+
+	HANDLE hParentProcess = OpenProcess(SYNCHRONIZE, FALSE, get_parent_pid());
+	return hParentProcess;
+}
+
+BOOL is_parent_dead() {
+	int nArgs = 0;
+
+	qstrvec_t out_args;
+	nArgs = parse_command_line3(GetCommandLineA(), &out_args, NULL, 0);
+
+
+	static HANDLE hParentProcess = NULL;
+	DWORD dwResult;
+	
+	/* If we don't yet have the parent handle, get it*/
+	if (NULL == hParentProcess) {
+		hParentProcess = get_parent_handle();
+	}
+	
+	/* Still no parent handle? Well, it can't be dead then! */
+	if (NULL == hParentProcess) {
+		return FALSE;
+	}
+
+	dwResult = WaitForSingleObject(hParentProcess, 0);
+	if (WAIT_OBJECT_0 == dwResult) {
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 void ipython_embed_iteration()
 {
+	if (TRUE == is_parent_dead()) {
+		OutputDebugStringA("[IDA-IPython] Parent is dead. Terminating.");
+		ipython_embed_term();
+		qexit(0);
+	}
+
     PyGILState_STATE state = PyGILState_Ensure();
 
     if (kernel_do_one_iteration == NULL && !attempted_start_kernel) {
         attempted_start_kernel = true;
         init_ipython_kernel();
-        //TODO: Report the error, call stack ect.
+        //TODO: Report the error, call stack etc.
         if ( PyErr_Occurred() ) {
             msg("A Python Error Occurred trying to start the kernel!\n");
         }

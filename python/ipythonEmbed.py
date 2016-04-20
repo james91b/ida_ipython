@@ -9,6 +9,13 @@ try:
     import atexit
     import contextlib
 
+    # Remove the un-needed environment variable
+    try:
+        del os.environ['PARENT_PROCESS_PID']
+    except KeyError:
+        pass
+
+
     # This is a hack to get zmq to work with the Anaconda distribution and IDA.
     try:
         platform.python_implementation()
