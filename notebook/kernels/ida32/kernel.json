@@ -4,7 +4,7 @@
  "argv": [
   "python",
   "-c",
-  "import sys\nimport subprocess\n\nCONNECTION_ARG = '-Snothing.idc -f {file}'\n\ndef launch_ida():\n    conn = CONNECTION_ARG.format(file=sys.argv[1])\n    ida_location=sys.argv[2]\n    ida_process = subprocess.Popen([ida_location, conn])\n    ida_process.wait()\n\nif __name__ == '__main__':\n    launch_ida()\n",
+  "import sys\nimport subprocess\nimport os\n\nCONNECTION_ARG = '-Snothing.idc -f {file}'\n\ndef launch_ida():\n    conn = CONNECTION_ARG.format(file=sys.argv[1])\n    ida_location=sys.argv[2]\n    ida_process = subprocess.Popen(\n        [ida_location, conn],\n         env=dict(\n             PARENT_PROCESS_PID=str(os.getpid()),\n              **os.environ\n              )\n        )\n    ida_process.wait()\n\nif __name__ == '__main__':\n    launch_ida()",
   "{connection_file}",
   "C:\\Program Files (x86)\\IDA 6.9\\idaq.exe"
  ],
