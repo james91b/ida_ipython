@@ -2,8 +2,10 @@
  "display_name": "IDA32",
  "language": "python",
  "argv": [
+  "python.exe",
+  "path\\to\\proxy.py",
   "C:\\Program Files (x86)\\IDA 6.8\\idaq.exe",
-  "-Snothing.idc -f {connection_file}"
+  "{connection_file}"
  ],
  "codemirror_mode": {
   "version": 2,
