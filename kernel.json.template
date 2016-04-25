@@ -1,0 +1,15 @@
+{
+ "display_name": "{{DISPLAY_NAME}}",
+ "language": "python",
+ "argv": [
+  "python",
+  "-c",
+  "{{LAUNCH_SCRIPT}}",
+  "{connection_file}",
+  "C:\\Program Files (x86)\\IDA 6.6\\{{EXE_NAME}}"
+ ],
+ "codemirror_mode": {
+  "version": 2,
+  "name": "ipython"
+ }
+}
