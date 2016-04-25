@@ -2,10 +2,11 @@
  "display_name": "IDA64",
  "language": "python",
  "argv": [
-  "python.exe",
-  "path\\to\\proxy.py",
-  "C:\\Program Files (x86)\\IDA 6.8\\idaq.exe",
-  "{connection_file}"
+  "python",
+  "-c",
+  "import sys\nimport subprocess\nimport os\n\nCONNECTION_ARG = '-Snothing.idc -f {file}'\n\ndef launch_ida():\n    print sys.argv\n    print str(os.getpid())\n    conn = CONNECTION_ARG.format(file=sys.argv[1])\n    ida_location=sys.argv[2]\n    ida_process = subprocess.Popen(\n        [ida_location, conn],\n         env=dict(\n             PARENT_PROCESS_PID=str(os.getpid()),\n              **os.environ\n              )\n        )\n    ida_process.wait()\n\nif __name__ == '__main__':\n    launch_ida()\n",
+  "{connection_file}",
+  "C:\\Program Files (x86)\\IDA 6.6\\idaq64.exe"
  ],
  "codemirror_mode": {
   "version": 2,

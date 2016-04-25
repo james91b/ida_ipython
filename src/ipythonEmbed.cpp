@@ -9,6 +9,7 @@ static const char IPYTHON_EMBED_START_QTCONSOLE_METHOD_NAME[] = "start_qtconsole
 static const char QT4_MODULE_NAME[] = "QtCore4.dll";
 static const char QT5_MODULE_NAME[] = "Qt5Core.dll";
 static const char EVENT_LOOP_FUNC_NAME[] = "?processEvents@QEventDispatcherWin32@QT@@UAE_NV?$QFlags@W4ProcessEventsFlag@QEventLoop@QT@@@2@@Z";
+static const char PARENT_PID_ENV_NAME[] = "PARENT_PROCESS_PID";
 static const char IDA_PYTHON_PLUGIN[] = "python";
 
 static PyObject* kernel_do_one_iteration = NULL;
@@ -59,65 +60,75 @@ cleanup:
     return ipython_kernel;
 }
 
-bool load_python(void)
+void init_python(void)
 {
     // Make sure the python is initialized
-    plugin_t *python = load_plugin(IDA_PYTHON_PLUGIN);
-    return python != NULL;
+    if (!Py_IsInitialized()) {
+        Py_Initialize();
+    }
 }
 
 void init_ipython_kernel(void)
 {
-    python_loaded = load_python();
-    if (python_loaded) {
-        PyGILState_STATE state = PyGILState_Ensure();
-        kernel_do_one_iteration = start_ipython_kernel(commandline_args);
-        if ( PyErr_Occurred() ) {
-            msg("A Python Error Occurred trying to start the kernel!\n");
-        }
-        PyGILState_Release(state);
-    }
+    init_python();
+    kernel_do_one_iteration = start_ipython_kernel(commandline_args);
 }
 
-DWORD get_parent_pid() {
-	HANDLE hSnapshot;
-	PROCESSENTRY32 pe32;
-	DWORD ppid = 0, pid = GetCurrentProcessId();
+DWORD get_parent_pid()
+ {
+	static BOOL already_check_environment = FALSE;
+	static DWORD ppid = 0;
 
-	hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	__try {
-		if (hSnapshot == INVALID_HANDLE_VALUE) __leave;
-
-		ZeroMemory(&pe32, sizeof(pe32));
-		pe32.dwSize = sizeof(pe32);
-		if (!Process32First(hSnapshot, &pe32)) __leave;
-
-		do {
-			if (pe32.th32ProcessID == pid) {
-				ppid = pe32.th32ParentProcessID;
-				break;
-			}
-		} while (Process32Next(hSnapshot, &pe32));
-
+	if (TRUE == already_check_environment) {
+		return ppid;
 	}
-	__finally {
-		if (hSnapshot != INVALID_HANDLE_VALUE) CloseHandle(hSnapshot);
+
+	/* Get the environment variable for the parent pid */
+	char pszPidString[30];
+	DWORD ret = GetEnvironmentVariableA(PARENT_PID_ENV_NAME, pszPidString, sizeof(pszPidString));
+
+	already_check_environment = TRUE;
+
+	if ((0 == ret) || (sizeof(pszPidString) == ret)) {
+		msg("No parent PID provided.\n");
+		return 0;
 	}
-	return ppid;
+
+	/* Parse it into a number and return it.*/
+	OutputDebugStringA("Found parent PID");
+	ppid = strtoul(pszPidString, NULL, 10);
 }
 
-HANDLE get_parent_handle() {
+HANDLE get_parent_handle()
+ {
+	DWORD ppid = get_parent_pid();
+
+	if (0 == ppid) {
+		return NULL;
+	}
+
 	HANDLE hParentProcess = OpenProcess(SYNCHRONIZE, FALSE, get_parent_pid());
 	return hParentProcess;
-	//TODO: add some sort of validation, that this is indeed the parent process.
 }
 
-BOOL is_parent_dead() {
+BOOL is_parent_dead()
+ {
+	int nArgs = 0;
+
+	qstrvec_t out_args;
+	nArgs = parse_command_line3(GetCommandLineA(), &out_args, NULL, 0);
+
+
 	static HANDLE hParentProcess = NULL;
 	DWORD dwResult;
 
 	if (NULL == hParentProcess) {
 		hParentProcess = get_parent_handle();
+	}
+
+	/* Still no parent handle? Well, it can't be dead then! */
+	if (NULL == hParentProcess) {
+		return FALSE;
 	}
 
 	dwResult = WaitForSingleObject(hParentProcess, 0);
@@ -130,19 +141,27 @@ BOOL is_parent_dead() {
 
 void ipython_embed_iteration()
 {
+	if (TRUE == is_parent_dead()) {
+		OutputDebugStringA("[IDA-IPython] Parent is dead. Terminating.");
+		ipython_embed_term();
+		qexit(0);
+	}
+
+    PyGILState_STATE state = PyGILState_Ensure();
+
     if (kernel_do_one_iteration == NULL && !attempted_start_kernel) {
         attempted_start_kernel = true;
         init_ipython_kernel();
+        //TODO: Report the error, call stack etc.
+        if ( PyErr_Occurred() ) {
+            msg("A Python Error Occurred trying to start the kernel!\n");
+        }
     } else if (kernel_do_one_iteration != NULL) {
-    	if (TRUE == is_parent_dead()) {
-    		ipython_embed_term();
-    		qexit(0);
-    	}
-
-        PyGILState_STATE state = PyGILState_Ensure();
         PyObject_CallObject(kernel_do_one_iteration, NULL);
-        PyGILState_Release(state);
     }
+
+    PyGILState_Release(state);
+
 }
 
 FARPROC eventloop_address()
@@ -164,11 +183,10 @@ int __fastcall DetourQEventDispatcherWin32(void* ecx, void* edx, int i)
         return pQEventDispatcherWin32(ecx, edx, i);
     } catch (const std::exception& ex) {
         std::string error = ex.what();
-        error = "[IDA IPython] " + error;
         const char *cstr = error.c_str();
         warning(cstr);
     } catch (...) {
-        warning("[IDA IPython] Something went wrong in the detour!");
+        warning("Something went wrong in the detour!");
     }
 
     return 0;
@@ -176,11 +194,6 @@ int __fastcall DetourQEventDispatcherWin32(void* ecx, void* edx, int i)
 
 void ipython_start_qtconsole()
 {
-	if (!python_loaded) {
-        warning("[IDA IPython] Cannot start console. Python plugin has not been loaded.");
-        return;
-	}
-
     PyGILState_STATE state = PyGILState_Ensure();
 
     PyObject *ipython_embed_module = NULL,
@@ -188,18 +201,18 @@ void ipython_start_qtconsole()
 
     ipython_embed_module = PyImport_ImportModule(IPYTHON_EMBED_MODULE);
     if (ipython_embed_module == NULL) {
-        warning("[IDA IPython] could not import ipythonEmbed module");
+        warning("could not import ipythonEmbed module");
         goto cleanup;
     }
 
     ipython_qtconsole_func = PyObject_GetAttrString(ipython_embed_module, IPYTHON_EMBED_START_QTCONSOLE_METHOD_NAME);
     if (ipython_qtconsole_func == NULL) {
-        warning("[IDA IPython] could not find start_qtconsole function");
+        warning("could not find start_qtconsole function");
         goto cleanup;
     }
 
     if (!PyCallable_Check(ipython_qtconsole_func)) {
-        warning("[IDA IPython] ipython start_qtconsole function is not callable");
+        warning("ipython start_qtconsole function is not callable");
         goto cleanup;
     }
 
