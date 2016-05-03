@@ -6,7 +6,7 @@
   "-c",
   "{{LAUNCH_SCRIPT}}",
   "{connection_file}",
-  "C:\\Program Files (x86)\\IDA 6.6\\{{EXE_NAME}}"
+  "C:\\Program Files (x86)\\IDA 6.8\\{{EXE_NAME}}"
  ],
  "codemirror_mode": {
   "version": 2,

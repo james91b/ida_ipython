@@ -82,12 +82,6 @@ target_link_libraries (ida64_ipython
                        ${MINHOOK_LIB}
                        ${PYTHON_LIB})
 
-install(TARGETS ida32_ipython DESTINATION ${IDA_DIR}/plugins)
-install(TARGETS ida64_ipython DESTINATION ${IDA_DIR}/plugins)
-install(FILES python/ipythonEmbed.py DESTINATION ${IDA_DIR}/python)
-install(FILES idc/nothing.idc DESTINATION ${IDA_DIR}/idc)
-
-
 #Read the launch script and escape chars
 file(READ "launch_ida.py" LAUNCH_IDA_PY)
 string(REPLACE "\"" "\\\"" LAUNCH_IDA_PY "${LAUNCH_IDA_PY}")
@@ -134,3 +128,7 @@ string(REPLACE
 file(WRITE notebook/kernels/ida32/kernel.json ${IDA_32_KERNEL})
 file(WRITE notebook/kernels/ida64/kernel.json ${IDA_64_KERNEL})
 
+install(TARGETS ida32_ipython DESTINATION ${IDA_DIR}/plugins)
+install(TARGETS ida64_ipython DESTINATION ${IDA_DIR}/plugins)
+install(FILES python/ipythonEmbed.py DESTINATION ${IDA_DIR}/python)
+install(FILES idc/nothing.idc DESTINATION ${IDA_DIR}/idc)

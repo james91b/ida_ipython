@@ -1,5 +1,6 @@
 # What's New
-- Added IDA 6.9 support
+- Improve python plugin load order (prevents crashes when python does not load correctly)
+- Add in safe IDA process termination (Special thanks to @tmr232 for this)
 
 #What and Why?
 This is a plugin to embed an IPython kernel in IDA Pro. The Python ecosystem has amazing libraries (and communities) for scientific computing. IPython itself is great for exploratory data analysis. Using tools such as the IPython notebook make it easy to share code and explanations with rich media. IPython makes using IDAPython and interacting with IDA programmatically really fun and easy.
@@ -59,6 +60,10 @@ e.g.
 So far only tested with "Visual Studio 11" compiler.
 
 #Changelog
+0.5
+- Improve python plugin load order (prevents crashes when python does not load correctly)
+- Add in safe IDA process termination (Special thanks to @tmr232 for this)
+
 0.4
 - Added IDA 6.9 support
 
