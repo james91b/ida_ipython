@@ -1,30 +1,59 @@
 import traceback
+import os
+import sys
+import platform
+import subprocess
+import idaapi
+import contextlib
 
+# This is a hack to get zmq to work with the Anaconda distribution and IDA.
 try:
-    import os
-    import sys
-    import platform
-    import subprocess
-    import idaapi
-    import atexit
-    import contextlib
+    platform.python_implementation()
+except ValueError:
+    sys.version = '2.7.5 |Anaconda 2.1.0 (32-bit)| (default, May 31 2013, 10:43:53) [MSC v.1500 32 bit (Intel)]'
 
-    # This is a hack to get zmq to work with the Anaconda distribution and IDA.
-    try:
-        platform.python_implementation()
-    except ValueError:
-        sys.version = '2.7.5 |Anaconda 2.1.0 (32-bit)| (default, May 31 2013, 10:43:53) [MSC v.1500 32 bit (Intel)]'
-
-    import __main__
-    from ipykernel.kernelapp import IPKernelApp
-    from IPython.utils.frame import extract_module_locals
-
-    kernel_app = None
-    menu_items = []
-    qtconsole_processes = []
+import __main__
+from ipykernel.kernelapp import IPKernelApp
+from IPython.utils.frame import extract_module_locals
 
 
-    def embed_kernel(module=None, local_ns=None, **kwargs):
+class IDAIPython(idaapi.plugin_t):
+    wanted_name = "IDA IPython"
+    wanted_hotkey = ""
+    flags = idaapi.PLUGIN_FIX
+    comment = ""
+    help = ""
+
+    def init(self):
+
+        self.kernel_app = None
+        self.menu_items = []
+        self.qtconsole_processes = []
+
+        argv = None
+        connection_file = os.environ.get("JUPYTER_CONNECTION", None)
+        if connection_file:
+            argv = ['-f', connection_file]
+
+        kernel_iteration = self.start(argv)
+
+        def timer_callback():
+            kernel_iteration()
+            return int(1000 * self.kernel_app.kernel._poll_interval)
+
+        self.timer = idaapi.register_timer(int(1000 * self.kernel_app.kernel._poll_interval), timer_callback)
+
+        return idaapi.PLUGIN_KEEP
+
+    def run(self, args):
+        pass
+
+    def term(self):
+        idaapi.unregister_timer(self.timer)
+        self.kill_qtconsoles()
+        self.remove_menus()
+
+    def embed_kernel(self, module=None, local_ns=None, **kwargs):
         """Embed and start an IPython kernel in a given scope.
 
         Parameters
@@ -71,80 +100,65 @@ try:
         app.kernel.start()
         return app
 
-
     @contextlib.contextmanager
-    def capture_output_streams():
-        _capture_output_streams()
+    def capture_output_streams(self):
+        self._capture_output_streams()
         try:
             yield
         finally:
-            _release_output_streams()
+            self._release_output_streams()
 
-
-    def _capture_output_streams():
+    def _capture_output_streams(self):
         sys.__stdout__, sys.__stderr__, sys.stdout, sys.stderr = sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__
 
-
-    def _release_output_streams():
+    def _release_output_streams(self):
         sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__ = sys.__stdout__, sys.__stderr__, sys.stdout, sys.stderr
 
-
-    def find_python_dir():
+    def find_python_dir(self):
         # We need to get the python directory like this, because
         # sys.executable will return idaq.exe. This just goes two
         # directories up from os.py location
         return os.path.dirname(os.path.dirname(os.__file__))
 
-
-    def start_qtconsole():
+    def start_qtconsole(self):
         try:
-            if kernel_app:
-                python_directory = find_python_dir()
+            if self.kernel_app:
+                python_directory = self.find_python_dir()
                 cmd_line = [
                     "{}/pythonw".format(python_directory),
                     "-m", "qtconsole",
-                    "--existing", kernel_app.connection_file
+                    "--existing", self.kernel_app.connection_file
                 ]
                 process = subprocess.Popen(cmd_line,
-                    stdin=None,
-                    stdout=None,
-                    stderr=None,
-                    close_fds=True)
-                qtconsole_processes.append(process)
+                                           stdin=None,
+                                           stdout=None,
+                                           stderr=None,
+                                           close_fds=True)
+                self.qtconsole_processes.append(process)
             else:
                 print "Error: No kernel defined!"
         except Exception, e:
             traceback.print_exc()
 
-
-    @atexit.register
-    def term():
-        kill_qtconsoles()
-        remove_menus()
-
-    def kill_qtconsoles():
-        for process in qtconsole_processes:
+    def kill_qtconsoles(self):
+        for process in self.qtconsole_processes:
             process.kill()
 
-
-    def remove_menus():
-        for menu_item in menu_items:
+    def remove_menus(self):
+        for menu_item in self.menu_items:
             idaapi.del_menu_item(menu_item)
 
+    def add_idaipython_menu(self):
+        menu_item = idaapi.add_menu_item('View/', 'IDAIPython QtConsole', '', 0, self.start_qtconsole, tuple())
+        self.menu_items.append(menu_item)
 
-    def add_idaipython_menu():
-        menu_item = idaapi.add_menu_item('View/', 'IDAIPython QtConsole', '', 0, start_qtconsole, tuple())
-        menu_items.append(menu_item)
-
-
-    def start(argv=None):
+    def start(self, argv=None):
         try:
-            with capture_output_streams():
-                global kernel_app
+            with self.capture_output_streams():
                 if argv:
                     sys.argv = argv
 
-                kernel_app = embed_kernel(module=__main__, local_ns={})
+                self.kernel_app = self.embed_kernel(module=__main__, local_ns={})
                 """
                  Starting with  ipython 4.2.0 whenever certain exceptions are thrown, there is a call to get_terminal_size().
                  in that function , in case environment variables for "COLUMNS" and "LINES" are not defined there is a call
@@ -155,15 +169,16 @@ try:
                 os.environ["COLUMNS"] = "80"
                 os.environ["LINES"]   = "24"
                 def kernel_iteration():
-                    with capture_output_streams():
-                        kernel_app.kernel.do_one_iteration()
+                    with self.capture_output_streams():
+                        self.kernel_app.kernel.do_one_iteration()
 
-                add_idaipython_menu()
+                self.add_idaipython_menu()
 
                 return kernel_iteration
         except Exception, e:
             traceback.print_exc()
             raise
 
-except Exception, e:
-    traceback.print_exc()
+
+def PLUGIN_ENTRY():
+    return IDAIPython()
