@@ -152,8 +152,8 @@ try:
                  so the call fails , and the kernel dies. the right way to solve it, is add AttributeError to the try/except in get_terminal_size.
                  a work around is to add this 2 environment variables
                 """
-                os.environ["COLUMNS"] = "70"
-                os.environ["LINES"]   = "70"
+                os.environ["COLUMNS"] = "80"
+                os.environ["LINES"]   = "24"
                 def kernel_iteration():
                     with capture_output_streams():
                         kernel_app.kernel.do_one_iteration()
