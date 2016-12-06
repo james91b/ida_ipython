@@ -167,7 +167,8 @@ class IDAIPython(idaapi.plugin_t):
                  a work around is to add this 2 environment variables
                 """
                 os.environ["COLUMNS"] = "80"
-                os.environ["LINES"]   = "24"
+                os.environ["LINES"] = "24"
+
                 def kernel_iteration():
                     with self.capture_output_streams():
                         self.kernel_app.kernel.do_one_iteration()
