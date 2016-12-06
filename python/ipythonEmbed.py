@@ -145,7 +145,15 @@ try:
                     sys.argv = argv
 
                 kernel_app = embed_kernel(module=__main__, local_ns={})
-
+                """
+                 Starting with  ipython 4.2.0 whenever certain exceptions are thrown, there is a call to get_terminal_size().
+                 in that function , in case environment variables for "COLUMNS" and "LINES" are not defined there is a call
+                 to sys.__stdout__.fileno()   in order to get a handle to the current terminal. IDAPythonStdOut doesn't have an attribute fileno
+                 so the call fails , and the kernel dies. the right way to solve it, is add AttributeError to the try/except in get_terminal_size.
+                 a work around is to add this 2 environment variables
+                """
+                os.environ["COLUMNS"] = "80"
+                os.environ["LINES"]   = "24"
                 def kernel_iteration():
                     with capture_output_streams():
                         kernel_app.kernel.do_one_iteration()
