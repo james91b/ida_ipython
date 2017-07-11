@@ -6,6 +6,11 @@ import subprocess
 import idaapi
 import contextlib
 
+idaapi.refresh_idaview()
+import idc
+
+idc.Refresh()
+
 # This is a hack to get zmq to work with the Anaconda distribution and IDA.
 try:
     platform.python_implementation()
@@ -15,6 +20,39 @@ except ValueError:
 import __main__
 from ipykernel.kernelapp import IPKernelApp
 from IPython.utils.frame import extract_module_locals
+
+
+def add_idaipython_menu(callback):
+    class MyHandler(idaapi.action_handler_t):
+        def __init__(self):
+            idaapi.action_handler_t.__init__(self)
+
+        def activate(self, ctx):
+            callback()
+            return 1
+
+        def update(self, ctx):
+            return idaapi.AST_ENABLE_ALWAYS
+
+    action_name = 'IDAIPython:QtConsole'
+    action_desc = idaapi.action_desc_t(
+        action_name,
+        'IDAIPython QtConsole',
+        MyHandler(),
+        '',
+        'Launch IDAIPython QtConsole',
+        -1)
+
+    idaapi.register_action(action_desc)
+
+    idaapi.attach_action_to_menu(
+        'View/',
+        action_name,
+        idaapi.SETMENU_INS)
+
+
+def remove_idaipython_menu():
+    idaapi.detach_action_from_menu('View/IDAIPython QtConsole', 'IDAIPython:QtConsole')
 
 
 class IDAIPython(idaapi.plugin_t):
@@ -145,12 +183,18 @@ class IDAIPython(idaapi.plugin_t):
             process.kill()
 
     def remove_menus(self):
-        for menu_item in self.menu_items:
-            idaapi.del_menu_item(menu_item)
+        try:
+            for menu_item in self.menu_items:
+                idaapi.del_menu_item(menu_item)
+        except:
+            remove_idaipython_menu()
 
     def add_idaipython_menu(self):
-        menu_item = idaapi.add_menu_item('View/', 'IDAIPython QtConsole', '', 0, self.start_qtconsole, tuple())
-        self.menu_items.append(menu_item)
+        try:
+            menu_item = idaapi.add_menu_item('View/', 'IDAIPython QtConsole', '', 0, self.start_qtconsole, tuple())
+            self.menu_items.append(menu_item)
+        except:
+            add_idaipython_menu(self.start_qtconsole)
 
     def start(self, argv=None):
         try:
