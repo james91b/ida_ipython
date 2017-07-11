@@ -11,10 +11,7 @@ def zipdir(path, ziph):
 def main(version) :
     release = zipfile.ZipFile('release-{}.zip'.format(version), 'w')
     zipdir('python', release)
-    zipdir('idc', release)
     zipdir('notebook', release)
-    release.write('build/release/ida_ipython.p64', 'plugins/ida_ipython.p64')
-    release.write('build/release/ida_ipython.plw', 'plugins/ida_ipython.plw')
     release.write('README.md')
     release.close()
     
