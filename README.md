@@ -30,7 +30,7 @@ More examples..soon...
 IDA is predominantly single threaded application, so we cannot safely run the kernel in a separate thread. So instead of using another thread a hook is created on the QT process events function and the `do_one_iteration` method of the ipython kernel is executed each frame.
 
 # Installation
-I suggest using the [Anaconda](http://continuum.io/downloads) distribution of Python as it comes with all the required python libraries pre-built and installed. To get IDA to use Anaconda, simply set the PYTHONHOME enviroment variable. Alternatively you can install IPython and the dependencies separately.
+I suggest using the [Anaconda](http://continuum.io/downloads) distribution of Python as it comes with all the required python libraries pre-built and installed. To get IDA to use Anaconda, simply set the PYTHONHOME environment variable. Alternatively you can install IPython and the dependencies separately.
 
 This plugin should work on all 6.X x86 QT versions of IDA on Windows.
 
